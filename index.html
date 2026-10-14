@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Pigeonhole Mail</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect x='2' y='2' width='36' height='36' rx='8' fill='%231f3fbf'/%3E%3Cg fill='%23fff'%3E%3Crect x='8' y='9' width='10' height='9' rx='1.5'/%3E%3Crect x='22' y='9' width='10' height='9' rx='1.5' opacity='.55'/%3E%3Crect x='8' y='22' width='10' height='9' rx='1.5' opacity='.55'/%3E%3Crect x='22' y='22' width='10' height='9' rx='1.5'/%3E%3C/g%3E%3Crect x='24' y='24' width='6' height='2' fill='%23e2b53a'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -329,6 +331,8 @@ async function api(path, opt = {}, inbox) {
   }
   return data;
 }
+/* The service may answer as a plain list or wrapped in "hydra:member" */
+function members(d) { if (Array.isArray(d)) return d; if (d && Array.isArray(d["hydra:member"])) return d["hydra:member"]; if (d && Array.isArray(d.member)) return d.member; return []; }
 async function login(inbox) {
   const d = await api("/token", { method: "POST", body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
   inbox.token = d.token; inbox.id = d.id; save();
@@ -336,7 +340,7 @@ async function login(inbox) {
 async function loadDomains() {
   if (S.domains.length) return S.domains;
   const d = await api("/domains");
-  S.domains = (d["hydra:member"] || []).filter(x => x.isActive !== false).map(x => x.domain);
+  S.domains = members(d).filter(x => x && x.domain && x.isActive !== false && x.isPrivate !== true).map(x => x.domain);
   const sel = $("domainSel"); sel.innerHTML = "";
   S.domains.forEach(dm => { const o = el("option", null, "@" + dm); o.value = dm; sel.appendChild(o); });
   if (!S.domains.length) throw new Error("The mail service has no domains available right now. Try again in a few minutes.");
@@ -552,7 +556,7 @@ let busy = false, lastOk = 0;
 function setLive(ok, txt) { $("liveDot").classList.toggle("off", !ok); $("liveTxt").textContent = txt; }
 async function fetchInbox(ib) {
   const d = await api("/messages?page=1", {}, ib);
-  const msgs = d["hydra:member"] || [];
+  const msgs = members(d);
   const known = S.known[ib.address];
   if (known) {
     const fresh = msgs.filter(m => !known.has(m.id));
@@ -621,7 +625,13 @@ $("newBtn").onclick = async () => {
 };
 $("customBtn").onclick = async () => {
   const c = $("creator"); c.classList.toggle("open");
-  if (c.classList.contains("open")) { try { await loadDomains(); } catch (e) { showErr(e.message); } $("customName").focus(); }
+  if (c.classList.contains("open")) {
+    const sel = $("domainSel");
+    if (!S.domains.length) { sel.innerHTML = '<option value="">Loading endings…</option>'; sel.disabled = true; }
+    try { await loadDomains(); sel.disabled = false; showErr(null); }
+    catch (e) { sel.innerHTML = '<option value="">Couldn\'t load, try again</option>'; showErr(e.message); }
+    $("customName").focus();
+  }
 };
 $("creator").onsubmit = async e => {
   e.preventDefault();
