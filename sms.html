@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pigeonhole Texts</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect x='2' y='2' width='36' height='36' rx='8' fill='%231f3fbf'/%3E%3Cpath d='M11 12h18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H18l-6 5v-5h-1a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3z' fill='%23fff'/%3E%3Crect x='14' y='18' width='12' height='2.4' rx='1.2' fill='%23e2b53a'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: same sorting-office desk as Pigeonhole email. Phone status strip on top, conversations left, chat thread right. */
+:root{
+  --bg:#eef1f6; --panel:#ffffff; --ink:#18223a; --muted:#5b6680; --line:#d6dbe6;
+  --accent:#1f3fbf; --accent-2:#e2b53a; --accent-ink:#ffffff; --soft:#e4e9f7;
+  --bubble-in:#eef1f6; --ok:#1d8a55; --bad:#c23a3a;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1424; --panel:#171e33; --ink:#e7ebf5; --muted:#97a1bb; --line:#2a3350;
+  --accent:#7d98ff; --accent-2:#e9c45a; --accent-ink:#0f1424; --soft:#1f2a4a; --bubble-in:#222b45; --ok:#4cc68c; --bad:#ff7b7b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1424; --panel:#171e33; --ink:#e7ebf5; --muted:#97a1bb; --line:#2a3350;
+  --accent:#7d98ff; --accent-2:#e9c45a; --accent-ink:#0f1424; --soft:#1f2a4a; --bubble-in:#222b45; --ok:#4cc68c; --bad:#ff7b7b; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:18px 28px;display:flex;flex-direction:column;gap:16px;min-height:100%}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand h1{font:800 22px/1 var(--f-display);margin:0;letter-spacing:-.01em}
+.brand small{color:var(--muted);font-size:13px}
+.logo{width:34px;height:34px}
+.hdr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;font-size:14px;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.danger{color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn[disabled]{opacity:.5;cursor:default}
+.icon{width:16px;height:16px;flex:none}
+
+.err{background:color-mix(in srgb,var(--bad) 14%,var(--panel));border:1px solid var(--bad);border-radius:10px;padding:10px 14px;font-size:14px}
+
+/* setup */
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:28px}
+.setup h2{font:600 24px/1.2 var(--f-display);margin:0 0 6px;text-wrap:balance}
+.setup p{margin:0;color:var(--muted);max-width:62ch}
+.steps{list-style:none;counter-reset:s;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+.steps li{counter-increment:s;position:relative;padding-left:44px;min-height:30px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:800 15px/30px var(--f-display);text-align:center}
+.steps b{display:block}
+.steps span{color:var(--muted);font-size:14px}
+.connect{background:var(--soft);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px;align-self:start}
+.connect label{font-weight:700;font-size:14px}
+.connect input,.connect select{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:10px 12px;font-family:var(--f-mono);font-size:14px}
+.small{font-size:13px;color:var(--muted)}
+
+/* status strip */
+.status{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap}
+.status .phone{font:600 16px/1.2 var(--f-display)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--ok)}
+.status .grow{flex:1}
+
+.desk{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:16px;flex:1;min-height:560px}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.listtools{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+.listtools input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px}
+.convs{overflow-y:auto;flex:1}
+.conv{display:grid;grid-template-columns:40px 1fr auto;gap:2px 10px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);border-left:3px solid transparent;background:none;width:100%;text-align:left;align-items:center}
+.conv:hover{background:var(--bg)}
+.conv.sel{background:var(--soft);border-left-color:var(--accent)}
+.av{grid-row:1/3;width:40px;height:40px;border-radius:50%;background:var(--soft);color:var(--accent);display:grid;place-items:center;font:700 14px/1 var(--f-display)}
+.who{font-family:var(--f-mono);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.conv.unread .who,.conv.unread .last{font-weight:700;color:var(--ink)}
+.when{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.last{grid-column:2/4;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dotnew{width:9px;height:9px;border-radius:50%;background:var(--accent);display:inline-block;margin-left:6px}
+
+.empty{padding:36px 22px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px;margin:auto}
+.empty h3{font:600 18px/1.2 var(--f-display);color:var(--ink);margin:0}
+.empty svg{width:60px;height:60px;opacity:.8}
+
+/* thread */
+.t-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.t-head .who{font-size:16px;font-weight:700;flex:1}
+.t-head input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;font-family:var(--f-mono)}
+.back{display:none}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px}
+.day{align-self:center;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.b{max-width:min(75%,520px);padding:9px 13px;border-radius:16px;white-space:pre-wrap;word-break:break-word;display:flex;flex-direction:column;gap:4px}
+.b.in{align-self:flex-start;background:var(--bubble-in);border-bottom-left-radius:4px}
+.b.out{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.b .meta{font-size:11px;opacity:.75;font-variant-numeric:tabular-nums}
+.b.out.failed{background:color-mix(in srgb,var(--bad) 20%,var(--panel));color:var(--ink);border:1px solid var(--bad)}
+.chip{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:var(--accent-2);color:#18223a;border:0;border-radius:6px;padding:4px 9px;font:700 13px/1.2 var(--f-mono)}
+.compose{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end}
+.compose textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;min-height:44px;max-height:160px}
+.count{font-size:12px;color:var(--muted);padding:0 12px 8px;text-align:right;font-variant-numeric:tabular-nums}
+
+.drawer{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.drawer h3{font:600 17px/1.2 var(--f-display);margin:0}
+.drawer h4{font:600 15px/1.2 var(--f-display);margin:8px 0 0}
+.drawer p,.drawer li{color:var(--muted);font-size:14px;max-width:72ch}
+.drawer p{margin:0}
+.drawer ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.drawer b{color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+.toast.show{opacity:1}
+footer{color:var(--muted);font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+@media (max-width:820px){
+  .setup{grid-template-columns:1fr;padding:18px}
+  .desk{grid-template-columns:1fr;min-height:0}
+  .desk.reading .listcol{display:none}
+  .desk:not(.reading) .thread{display:none}
+  .back{display:inline-flex}
+  .thread{min-height:70vh}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="./" title="Back to Pigeonhole email">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="8" fill="var(--accent)"/><path d="M11 12h18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H18l-6 5v-5h-1a3 3 0 0 1-3-3v-9a3 3 0 0 1 3-3z" fill="var(--accent-ink)"/><rect x="14" y="18" width="12" height="2.4" rx="1.2" fill="var(--accent-2)"/></svg>
+      <div><h1>Pigeonhole Texts</h1><small>Your phone's texts, on your computer</small></div>
+    </a>
+    <div class="hdr-actions">
+      <button class="btn" id="helpBtn" type="button" aria-expanded="false" aria-controls="help">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.5" r=".6" fill="currentColor"/></svg>How to use</button>
+      <button class="btn" id="alertsBtn" type="button" title="Sound and pop-up when a text arrives">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Alerts off</span></button>
+      <a class="btn" href="./" title="Throwaway email inboxes">Email</a>
+      <button class="btn" id="themeBtn" type="button" aria-label="Switch theme">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
+    </div>
+  </header>
+
+  <div id="errBox" class="err" hidden></div>
+
+  <!-- First-time setup -->
+  <section class="setup" id="setup" hidden>
+    <div>
+      <h2>Connect your Android phone</h2>
+      <p>Pigeonhole Texts shows the text messages on your Android phone here on your computer, and lets you reply. Your phone does the sending, so texts come from your real number. It uses the free textbee app to link the two.</p>
+      <ol class="steps">
+        <li><b>Put your SIM in an Android phone</b><span>Any Android phone works, even an old spare one. iPhones aren't supported.</span></li>
+        <li><b>Install textbee on the phone</b><span>Go to <a href="https://textbee.dev" target="_blank" rel="noopener">textbee.dev</a>, create a free account, and download the app. Open it and allow it to send and receive SMS.</span></li>
+        <li><b>Link the phone</b><span>In the textbee dashboard on your computer, click <em>Register device</em> and scan the QR code with the textbee app. Make sure <em>Receive SMS</em> is switched on in the app.</span></li>
+        <li><b>Get your API key</b><span>In the dashboard, click <em>Generate API key</em> and copy it.</span></li>
+        <li><b>Paste it on the right</b><span>Your key is saved only in this browser. Keep the phone charged and connected to Wi-Fi.</span></li>
+      </ol>
+    </div>
+    <form class="connect" id="connectForm">
+      <label for="apiKey">Your textbee API key</label>
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key here">
+      <button class="btn primary" type="submit" id="connectBtn">Connect</button>
+      <div id="devicePick" hidden>
+        <label for="deviceSel">Which phone?</label>
+        <select id="deviceSel"></select>
+        <button class="btn primary" type="button" id="useDevice" style="margin-top:8px">Use this phone</button>
+      </div>
+      <p class="small">Free textbee accounts can send 50 texts a day and 300 a month. Receiving is unlimited.</p>
+    </form>
+  </section>
+
+  <!-- App -->
+  <section class="status" id="status" hidden>
+    <span class="phone" id="phoneName">Your phone</span>
+    <span class="pill"><span class="dot" id="phoneDot"></span><span id="phoneState">Checking…</span></span>
+    <span class="pill" id="battery" hidden></span>
+    <span class="grow"></span>
+    <span class="pill" id="sync">Updating…</span>
+    <button class="btn danger" id="disconnectBtn" type="button" title="Forget the API key on this computer">Disconnect</button>
+  </section>
+
+  <section class="drawer" id="help" hidden aria-labelledby="helpTitle">
+    <div class="row"><h3 id="helpTitle">How to use Pigeonhole Texts</h3><button class="btn" id="closeHelp" type="button">Close</button></div>
+    <h4>Reading texts</h4>
+    <ul>
+      <li>Conversations are listed on the left, newest first. A blue dot means a new text you haven't opened.</li>
+      <li>Click a conversation to read it. Your messages are on the right in blue; theirs are on the left.</li>
+      <li>If a text contains a sign-in or verification code, a yellow <b>Code</b> button appears. Click it to copy the code.</li>
+      <li>New texts appear on their own within about 10 seconds. Turn on <b>Alerts</b> for a sound and pop-up.</li>
+    </ul>
+    <h4>Sending texts</h4>
+    <ul>
+      <li>To reply, type in the box at the bottom of a conversation and press <b>Send</b> (or Ctrl + Enter).</li>
+      <li>To text someone new, click <b>New</b>, type their number (for example 07700 900123), then your message.</li>
+      <li>Under each sent text you'll see its progress: <b>Queued</b>, <b>Sent</b>, <b>Delivered</b>, or <b>Failed</b>.</li>
+      <li>A text over 160 characters is split into parts and may cost more on your phone plan. The counter shows how many parts.</li>
+    </ul>
+    <h4>Good to know</h4>
+    <ul>
+      <li><b>Your phone must be on</b>, charged and online. The bar at the top shows when it last checked in.</li>
+      <li><b>Texts cost what your phone plan charges.</b> Most UK plans include unlimited texts.</li>
+      <li><b>Free textbee limit:</b> 50 sent texts a day and 300 a month.</li>
+      <li><b>Keep this page private.</b> Your key is saved in this browser only. Click Disconnect on shared computers.</li>
+      <li>Only texts received after textbee was set up appear here. Older texts stay on the phone.</li>
+    </ul>
+    <h4>Something not working?</h4>
+    <ul>
+      <li><b>"Phone offline":</b> open the textbee app on the phone, check it's connected to the internet, and turn off battery saving for textbee.</li>
+      <li><b>Texts arrive on the phone but not here:</b> in the textbee app, make sure Receive SMS is switched on.</li>
+      <li><b>"Key not accepted":</b> generate a new API key in the textbee dashboard and connect again.</li>
+    </ul>
+  </section>
+
+  <div class="desk" id="desk" hidden>
+    <div class="col listcol">
+      <div class="listtools">
+        <input id="q" type="search" placeholder="Search texts" aria-label="Search texts">
+        <button class="btn primary" id="newBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New</button>
+      </div>
+      <div class="convs" id="convs"></div>
+    </div>
+    <div class="col thread" id="thread"></div>
+  </div>
+
+  <footer>
+    <span>Texts are sent and received by your own phone through <a href="https://textbee.dev" target="_blank" rel="noopener">textbee</a>.</span>
+    <span>Your key never leaves this browser except to talk to textbee.</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+const API = "https://api.textbee.dev/api/v1";
+const $ = id => document.getElementById(id);
+const S = { key: null, device: null, msgs: [], sel: null, newMode: false, seen: {}, alerts: false, known: null, drafts: {} };
+
+/* storage */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("pht_" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { if (v == null) localStorage.removeItem("pht_" + k); else localStorage.setItem("pht_" + k, JSON.stringify(v)); } catch {} }
+};
+
+/* helpers */
+let toastT;
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2000); }
+function showErr(t) { $("errBox").textContent = t || ""; $("errBox").hidden = !t; }
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+async function copy(text, label) {
+  try { await navigator.clipboard.writeText(text); toast((label || "Copied") + " ✓"); }
+  catch { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); toast((label || "Copied") + " ✓"); } catch { toast("Select and copy manually"); } ta.remove(); }
+}
+function ago(ts) {
+  const s = Math.max(0, (Date.now() - ts) / 1000);
+  if (s < 60) return "just now"; if (s < 3600) return Math.round(s / 60) + " min ago";
+  if (s < 86400) return Math.round(s / 3600) + " h ago"; return Math.round(s / 86400) + " days ago";
+}
+function shortTime(ts) {
+  const d = new Date(ts), n = new Date();
+  if (d.toDateString() === n.toDateString()) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (n - d < 6 * 864e5) return d.toLocaleDateString([], { weekday: "short" });
+  return d.toLocaleDateString([], { day: "numeric", month: "short" });
+}
+/* UK-friendly number handling */
+function normNumber(n) {
+  let s = String(n || "").trim();
+  if (!/^[+\d\s()-]+$/.test(s)) return s; /* names like "BANK" stay as they are */
+  s = s.replace(/[\s()-]/g, "");
+  if (s.startsWith("00")) s = "+" + s.slice(2);
+  else if (s.startsWith("07") && s.length === 11) s = "+44" + s.slice(1);
+  else if (s.startsWith("447")) s = "+" + s;
+  return s;
+}
+function prettyNumber(n) {
+  const s = normNumber(n);
+  const m = s.match(/^\+44(7\d{3})(\d{6})$/);
+  return m ? "0" + m[1] + " " + m[2] : s;
+}
+function canReply(n) { return /^\+\d{6,15}$/.test(normNumber(n)); }
+function initials(n) { const p = prettyNumber(n); return /^[\d+ ]+$/.test(p) ? p.replace(/\D/g, "").slice(-2) : p.slice(0, 2).toUpperCase(); }
+
+/* code detection (same rules as Pigeonhole email) */
+const KEY = /(code|otp|pin|passcode|password|verification|verify|confirm|security|one[- ]?time|token|login|sign[- ]?in|2fa)/i;
+function findCode(text) {
+  if (!text) return null;
+  const t = text.replace(/\s+/g, " ");
+  let m = t.match(/(?:code|otp|pin|passcode|verification|security|one[- ]?time|2fa)[^0-9a-z]{0,6}(?:[a-z ]{0,25}?)[:\s-]*\b([0-9]{4,8}|[0-9]{3}[- ][0-9]{3})\b/i);
+  if (m) return m[1].replace(/[- ]/g, "");
+  m = t.match(/\b([0-9]{4,8})\b[^.]{0,40}?(?:is your|code|otp|verification)/i);
+  if (m) return m[1];
+  if (KEY.test(t)) {
+    m = t.match(/\b(?=[A-Z0-9]*[0-9])(?=[A-Z0-9]*[A-Z])[A-Z0-9]{5,8}\b/); if (m) return m[0];
+    m = t.match(/\b[0-9]{6}\b/); if (m) return m[0];
+  }
+  return null;
+}
+
+/* SMS length: GSM-7 is 160 per text (153 when split), anything else 70 (67) */
+const GSM = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+function segments(text) {
+  if (!text) return { n: 0, left: 160 };
+  const gsm = GSM.test(text);
+  const len = gsm ? [...text].reduce((a, c) => a + ("^{}\\[~]|€".includes(c) ? 2 : 1), 0) : [...text].length;
+  const one = gsm ? 160 : 70, many = gsm ? 153 : 67;
+  if (len <= one) return { n: 1, left: one - len };
+  const n = Math.ceil(len / many); return { n, left: n * many - len };
+}
+
+/* API */
+async function api(path, opt = {}) {
+  const headers = { "x-api-key": S.key };
+  if (opt.body) headers["Content-Type"] = "application/json";
+  let res;
+  try { res = await fetch(API + path, { method: opt.method || "GET", headers, body: opt.body }); }
+  catch {
+    const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    const e = new Error(inFrame ? "This preview window blocks internet access. Open Pigeonhole Texts from its website link instead."
+      : !navigator.onLine ? "You're offline. Connect to the internet and refresh the page."
+      : "Can't reach textbee. An ad blocker or a work or school network may be blocking it. Try another network or turn the blocker off for this page.");
+    e.network = true; throw e;
+  }
+  const data = await res.json().catch(() => null);
+  if (res.status === 401 || res.status === 403) { const e = new Error("Your textbee key wasn't accepted. Generate a new API key in the textbee dashboard and connect again."); e.auth = true; throw e; }
+  if (res.status === 429) throw new Error("You've reached textbee's sending limit. Free accounts can send 50 texts a day and 300 a month.");
+  if (!res.ok) throw new Error((data && (data.message || data.error)) ? String(Array.isArray(data.message) ? data.message.join(", ") : data.message || data.error) : "textbee returned an error (" + res.status + "). Try again in a minute.");
+  return data;
+}
+function isIncoming(m) { return m.direction === "received" || m.direction === "inbound" || m.status === "received" || (!!m.sender && !m.recipient); }
+function tsOf(m) { return new Date(m.receivedAt || m.sentAt || m.dispatchedAt || m.requestedAt || m.createdAt || Date.now()).getTime(); }
+function partyOf(m) { return normNumber(isIncoming(m) ? m.sender : m.recipient); }
+
+/* rendering */
+function conversations() {
+  const map = new Map();
+  for (const m of S.msgs) {
+    const p = partyOf(m); if (!p) continue;
+    let c = map.get(p); if (!c) { c = { party: p, msgs: [], last: 0, lastIn: 0 }; map.set(p, c); }
+    c.msgs.push(m); const t = tsOf(m);
+    if (t > c.last) { c.last = t; c.lastMsg = m; }
+    if (isIncoming(m) && t > c.lastIn) c.lastIn = t;
+  }
+  return [...map.values()].sort((a, b) => b.last - a.last);
+}
+function emptyState(title, body) {
+  const d = el("div", "empty");
+  d.innerHTML = '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 14h40a5 5 0 0 1 5 5v20a5 5 0 0 1-5 5H28l-12 10V44h-4a5 5 0 0 1-5-5V19a5 5 0 0 1 5-5z"/><path d="M22 29h20" stroke="var(--accent-2)"/></svg>';
+  d.appendChild(el("h3", null, title)); if (body) d.appendChild(el("p", null, body)); return d;
+}
+function renderList() {
+  const box = $("convs"); box.innerHTML = "";
+  const q = $("q").value.trim().toLowerCase();
+  let convs = conversations();
+  if (q) convs = convs.filter(c => prettyNumber(c.party).toLowerCase().includes(q) || c.party.includes(q) || c.msgs.some(m => (m.message || "").toLowerCase().includes(q)));
+  if (!convs.length) {
+    box.appendChild(q ? emptyState("No matches", "No texts match your search.")
+      : emptyState("No texts yet", "Texts your phone receives from now on will appear here. Click New to send one."));
+    return;
+  }
+  convs.forEach(c => {
+    const unread = c.lastIn > (S.seen[c.party] || 0) && S.sel !== c.party;
+    const b = el("button", "conv" + (S.sel === c.party ? " sel" : "") + (unread ? " unread" : "")); b.type = "button";
+    b.appendChild(el("span", "av", initials(c.party)));
+    const who = el("span", "who", prettyNumber(c.party)); if (unread) who.appendChild(el("span", "dotnew"));
+    b.appendChild(who);
+    b.appendChild(el("span", "when", shortTime(c.last)));
+    const lm = c.lastMsg;
+    b.appendChild(el("span", "last", (isIncoming(lm) ? "" : "You: ") + (lm.encrypted ? "(encrypted message)" : (lm.message || ""))));
+    b.onclick = () => openConv(c.party);
+    box.appendChild(b);
+  });
+}
+const STATUS = { pending: "Queued", dispatched: "Sending", sent: "Sent", delivered: "Delivered", failed: "Failed", unknown: "Sent" };
+function renderThread() {
+  const t = $("thread"); t.innerHTML = "";
+  if (!S.sel && !S.newMode) {
+    t.appendChild(emptyState(S.msgs.length ? "Pick a conversation" : "Ready when you are",
+      S.msgs.length ? "Choose a conversation on the left, or click New to text someone." : "Click New to send your first text from your phone's number."));
+    $("desk").classList.remove("reading");
+    return;
+  }
+  $("desk").classList.add("reading");
+  const head = el("div", "t-head");
+  const back = el("button", "btn back", "←"); back.type = "button"; back.setAttribute("aria-label", "Back to conversations");
+  back.onclick = () => { S.sel = null; S.newMode = false; renderAll(); };
+  head.appendChild(back);
+  let toInput;
+  if (S.newMode) {
+    toInput = el("input"); toInput.id = "toNum"; toInput.type = "tel"; toInput.placeholder = "To: mobile number, e.g. 07700 900123"; toInput.setAttribute("aria-label", "Recipient number");
+    head.appendChild(toInput);
+  } else {
+    head.appendChild(el("span", "who", prettyNumber(S.sel)));
+    if (canReply(S.sel)) { const cp = el("button", "btn", "Copy number"); cp.type = "button"; cp.onclick = () => copy(prettyNumber(S.sel), "Number copied"); head.appendChild(cp); }
+  }
+  t.appendChild(head);
+
+  const box = el("div", "msgs");
+  if (S.newMode) box.appendChild(emptyState("New text", "Type a number above and your message below. It will be sent from your phone."));
+  else {
+    const msgs = S.msgs.filter(m => partyOf(m) === S.sel).sort((a, b) => tsOf(a) - tsOf(b));
+    let lastDay = "";
+    msgs.forEach(m => {
+      const ts = tsOf(m), day = new Date(ts).toDateString();
+      if (day !== lastDay) { box.appendChild(el("div", "day", new Date(ts).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }))); lastDay = day; }
+      const inc = isIncoming(m);
+      const b = el("div", "b " + (inc ? "in" : "out") + (m.status === "failed" ? " failed" : ""));
+      b.appendChild(el("span", null, m.encrypted ? "(encrypted message: turn off encryption in textbee to read it here)" : (m.message || "")));
+      const code = inc && !m.encrypted ? findCode(m.message) : null;
+      if (code) { const c = el("button", "chip", "Code " + code + "  ⧉ copy"); c.type = "button"; c.onclick = () => copy(code, "Code copied"); b.appendChild(c); }
+      const time = new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      b.appendChild(el("span", "meta", inc ? time : time + " · " + (STATUS[m.status] || "Sent") + (m.status === "failed" && m.errorMessage ? ": " + m.errorMessage : "")));
+      box.appendChild(b);
+    });
+  }
+  t.appendChild(box);
+
+  if (!S.newMode && !canReply(S.sel)) {
+    t.appendChild(el("div", "count", "This sender uses a name instead of a number, so you can't reply to it."));
+    box.scrollTop = box.scrollHeight; return;
+  }
+  const comp = el("form", "compose");
+  const ta = el("textarea"); ta.id = "msgText"; ta.rows = 1; ta.placeholder = "Type a text"; ta.setAttribute("aria-label", "Message");
+  ta.value = S.drafts[S.newMode ? "_new" : S.sel] || "";
+  const send = el("button", "btn primary", "Send"); send.type = "submit";
+  comp.appendChild(ta); comp.appendChild(send);
+  t.appendChild(comp);
+  const count = el("div", "count"); t.appendChild(count);
+  const upd = () => {
+    ta.style.height = "auto"; ta.style.height = Math.min(160, ta.scrollHeight) + "px";
+    const sg = segments(ta.value); S.drafts[S.newMode ? "_new" : S.sel] = ta.value;
+    count.textContent = ta.value ? (sg.n === 1 ? sg.left + " characters left" : sg.n + " texts · " + sg.left + " characters left in the last one") : "";
+  };
+  ta.oninput = upd; upd();
+  ta.onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); comp.requestSubmit(); } };
+  comp.onsubmit = async e => {
+    e.preventDefault();
+    const text = ta.value.trim(); if (!text) return;
+    const to = normNumber(S.newMode ? toInput.value : S.sel);
+    if (!/^\+\d{8,15}$/.test(to)) { toast("Enter a valid mobile number, e.g. 07700 900123"); (toInput || ta).focus(); return; }
+    send.disabled = true; send.textContent = "Sending…";
+    try {
+      await api("/gateway/send-sms", { method: "POST", body: JSON.stringify({ recipients: [to], message: text, deviceId: S.device }) });
+      S.drafts[S.newMode ? "_new" : S.sel] = "";
+      /* show it straight away; the next refresh replaces it with the real record */
+      S.msgs.push({ _id: "local-" + Date.now(), message: text, recipient: to, status: "pending", direction: "sent", createdAt: new Date().toISOString(), local: true });
+      S.sel = to; S.newMode = false; S.seen[to] = Date.now(); store.set("seen", S.seen);
+      renderAll(); toast("Text queued on your phone");
+      setTimeout(refresh, 2500);
+    } catch (err) { showErr(err.message); send.disabled = false; send.textContent = "Send"; }
+  };
+  box.scrollTop = box.scrollHeight;
+  if (S.newMode && toInput) toInput.focus();
+}
+function openConv(p) {
+  S.sel = p; S.newMode = false; S.seen[p] = Date.now(); store.set("seen", S.seen);
+  renderAll();
+  const ta = $("msgText"); if (ta && matchMedia("(min-width:821px)").matches) ta.focus();
+}
+function renderAll() { renderList(); renderThread(); }
+
+/* phone status */
+function renderDevice(d) {
+  if (!d) return;
+  $("phoneName").textContent = d.name || [d.brand, d.model].filter(Boolean).join(" ") || "Your phone";
+  const hb = d.lastHeartbeat ? new Date(d.lastHeartbeat).getTime() : 0;
+  const mins = d.heartbeatIntervalMinutes || 5;
+  const online = hb && Date.now() - hb < (mins * 3 + 2) * 60000;
+  $("phoneDot").classList.toggle("on", !!online);
+  $("phoneState").textContent = hb ? (online ? "Phone online · checked in " + ago(hb) : "Phone may be offline · last seen " + ago(hb)) : (d.enabled === false ? "Phone disabled in textbee" : "Phone linked");
+  const bi = d.batteryInfo || {};
+  const pct = [bi.percentage, bi.level, bi.batteryLevel, bi.percent].find(v => typeof v === "number");
+  if (typeof pct === "number") { $("battery").hidden = false; $("battery").textContent = "Battery " + Math.round(pct <= 1 ? pct * 100 : pct) + "%" + (bi.isCharging || bi.charging ? " · charging" : ""); }
+  if (d.receiveSMSEnabled === false) showErr("Receiving texts is switched off on your phone. Open the textbee app and turn on Receive SMS.");
+}
+
+/* refresh */
+let busy = false, lastOk = 0, devTick = 0;
+async function refresh() {
+  if (busy || !S.key || !S.device) return;
+  busy = true;
+  try {
+    const q = new URLSearchParams({ direction: "all", limit: "100", order: "desc", deviceIds: S.device });
+    const d = await api("/gateway/messages?" + q.toString());
+    const fresh = Array.isArray(d && d.data) ? d.data : [];
+    const pending = S.msgs.filter(m => m.local && !fresh.some(f => !isIncoming(f) && f.message === m.message && normNumber(f.recipient) === m.recipient));
+    const ids = new Set(fresh.map(m => m._id));
+    if (S.known) {
+      const arrived = fresh.filter(m => isIncoming(m) && !S.known.has(m._id));
+      if (arrived.length) announce(arrived);
+    }
+    S.known = ids;
+    S.msgs = fresh.concat(pending);
+    lastOk = Date.now(); $("sync").textContent = "Updated just now"; showErr(null);
+    if (S.sel) { S.seen[S.sel] = Date.now(); store.set("seen", S.seen); }
+    renderList();
+    const sig = S.sel ? S.msgs.filter(m => partyOf(m) === S.sel).map(m => m._id + ":" + m.status).sort().join("|") : "";
+    if (!S.newMode && sig !== S.lastSig && !(document.activeElement && document.activeElement.id === "msgText" && $("msgText").value)) { S.lastSig = sig; renderThread(); }
+    if (devTick++ % 6 === 0) { try { const dv = await api("/gateway/devices/" + S.device); renderDevice(dv && dv.data); } catch {} }
+  } catch (e) {
+    if (e.auth) { disconnect(); showErr(e.message); }
+    else { $("sync").textContent = lastOk ? "Reconnecting… (last update " + ago(lastOk) + ")" : "Can't connect"; if (!lastOk || e.network) showErr(e.message); }
+  } finally { busy = false; }
+}
+setInterval(() => { if (!document.hidden) refresh(); }, 10000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { refresh(); unseen = 0; document.title = "Pigeonhole Texts"; } });
+setInterval(() => { if (lastOk) $("sync").textContent = "Updated " + ago(lastOk); }, 30000);
+
+/* alerts */
+let unseen = 0;
+function beep() {
+  try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.frequency.value = 740; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.4); } catch {}
+}
+function announce(arrived) {
+  if (document.hidden) { unseen += arrived.length; document.title = "(" + unseen + ") Pigeonhole Texts"; }
+  toast("New text from " + prettyNumber(arrived[0].sender));
+  if (!S.alerts) return;
+  beep();
+  try {
+    if ("Notification" in window && Notification.permission === "granted") arrived.slice(0, 3).forEach(m => {
+      const code = findCode(m.message);
+      new Notification(code ? "Code " + code : "Text from " + prettyNumber(m.sender), { body: m.encrypted ? "(encrypted)" : (m.message || "").slice(0, 120) });
+    });
+  } catch {}
+}
+function paintAlerts() { $("alertsBtn").querySelector("span").textContent = S.alerts ? "Alerts on" : "Alerts off"; $("alertsBtn").classList.toggle("primary", S.alerts); }
+$("alertsBtn").onclick = async () => {
+  S.alerts = !S.alerts;
+  if (S.alerts && "Notification" in window && Notification.permission === "default") { try { await Notification.requestPermission(); } catch {} }
+  if (S.alerts) beep(); store.set("alerts", S.alerts); paintAlerts();
+};
+
+/* connect / disconnect */
+function showApp(on) {
+  $("setup").hidden = on; $("status").hidden = !on; $("desk").hidden = !on;
+}
+let devicesCache = [];
+$("connectForm").onsubmit = async e => {
+  e.preventDefault();
+  const key = $("apiKey").value.trim();
+  if (key.length < 10) { toast("Paste the API key from your textbee dashboard"); return; }
+  S.key = key; const btn = $("connectBtn"); btn.disabled = true; btn.textContent = "Connecting…";
+  try {
+    const d = await api("/gateway/devices");
+    devicesCache = (d && d.data) || [];
+    if (!devicesCache.length) throw new Error("Your key works, but no phone is linked yet. Open the textbee app on your phone and scan the QR code from the textbee dashboard, then try again.");
+    if (devicesCache.length === 1) { useDevice(devicesCache[0]); return; }
+    const sel = $("deviceSel"); sel.innerHTML = "";
+    devicesCache.forEach((dv, i) => { const o = el("option", null, (dv.name || [dv.brand, dv.model].filter(Boolean).join(" ") || "Phone " + (i + 1)) + (dv.isDefault ? " (default)" : "")); o.value = String(i); sel.appendChild(o); });
+    $("devicePick").hidden = false; showErr(null);
+  } catch (err) { S.key = null; showErr(err.message); }
+  finally { btn.disabled = false; btn.textContent = "Connect"; }
+};
+$("useDevice").onclick = () => { const dv = devicesCache[Number($("deviceSel").value) || 0]; if (dv) useDevice(dv); };
+function useDevice(dv) {
+  S.device = dv._id; store.set("key", S.key); store.set("device", S.device);
+  $("apiKey").value = ""; $("devicePick").hidden = true; showErr(null);
+  showApp(true); renderDevice(dv); renderAll(); refresh(); toast("Connected to your phone");
+}
+function disconnect() {
+  S.key = null; S.device = null; S.msgs = []; S.sel = null; S.known = null;
+  store.set("key", null); store.set("device", null);
+  showApp(false);
+}
+$("disconnectBtn").onclick = () => {
+  const b = $("disconnectBtn");
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirm disconnect"; setTimeout(() => { b.classList.remove("armed"); b.textContent = "Disconnect"; }, 3500); return; }
+  b.classList.remove("armed"); b.textContent = "Disconnect"; disconnect(); toast("Disconnected. Your key was removed from this browser.");
+};
+
+/* list tools */
+$("q").oninput = renderList;
+$("newBtn").onclick = () => { S.newMode = true; S.sel = null; renderAll(); };
+
+/* help */
+function setHelp(open) { $("help").hidden = !open; $("helpBtn").setAttribute("aria-expanded", String(open)); if (open) $("help").scrollIntoView({ behavior: "smooth", block: "start" }); }
+$("helpBtn").onclick = () => setHelp($("help").hidden);
+$("closeHelp").onclick = () => setHelp(false);
+
+/* theme */
+function applyTheme(t) { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); }
+$("themeBtn").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const nx = cur === "dark" ? "light" : "dark"; applyTheme(nx); store.set("theme", nx);
+};
+
+/* boot */
+applyTheme(store.get("theme", null));
+S.alerts = store.get("alerts", false); paintAlerts();
+S.seen = store.get("seen", {});
+S.key = store.get("key", null); S.device = store.get("device", null);
+if (S.key && S.device) { showApp(true); renderAll(); refresh(); } else { S.key = null; showApp(false); }
+})();
+</script>
+</body>
+</html>

@@ -83,6 +83,23 @@ That's it. Next time you open Pigeonhole in the same browser, your address and e
 
 ---
 
+## Pigeonhole Texts (your phone's texts on your computer)
+
+Pigeonhole also includes **Pigeonhole Texts** (`sms.html`): read and send the text messages on your own Android phone from your computer. Texts come from your real number. Open it with the **Texts** button at the top of Pigeonhole, or go to `https://somersetnomad.github.io/Pigeonhole/sms.html`.
+
+**Setting it up (once):**
+1. Put your SIM in an Android phone (an old spare one is fine). iPhones aren't supported.
+2. Create a free account at [textbee.dev](https://textbee.dev) and install the textbee app on the phone.
+3. In the textbee dashboard, click **Register device** and scan the QR code with the app. Switch on **Receive SMS** in the app.
+4. In the dashboard, click **Generate API key** and copy it.
+5. Open Pigeonhole Texts, paste the key, and click **Connect**.
+
+**Good to know:**
+- The phone must stay on, charged and online. Turn off battery saving for textbee.
+- Free textbee accounts can send 50 texts a day and 300 a month. Receiving is unlimited.
+- Your key is saved only in your browser. Click **Disconnect** on shared computers.
+- Only texts that arrive after setup appear. Older texts stay on the phone.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
