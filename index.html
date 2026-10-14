@@ -29,6 +29,7 @@
   --accent:#7d98ff; --accent-2:#e9c45a; --accent-ink:#0f1424; --soft:#1f2a4a; --ok:#4cc68c; --bad:#ff7b7b; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -271,14 +272,13 @@ footer a{color:var(--accent)}
 
   <footer>
     <span>Receive-only. Messages are deleted by the provider after a while, so don't use this for anything important.</span>
-    <span>Mail delivered by <a href="https://mail.tm" target="_blank" rel="noopener">Mail.tm</a></span>
+    <span>Mail delivered by <a href="https://mail.tm" target="_blank" rel="noopener">Mail.tm</a> and <a href="https://mail.gw" target="_blank" rel="noopener">Mail.gw</a></span>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (() => {
-const API = "https://api.mail.tm";
 const $ = id => document.getElementById(id);
 const S = { inboxes: [], active: null, msgs: {}, sel: null, view: "html", images: false, alerts: false, domains: [], known: {} };
 
@@ -311,22 +311,34 @@ function randomName() { const r = rnd(3); return ADJ[r[0] % ADJ.length] + "." + 
 function randomPass() { return Array.from(rnd(4), x => x.toString(36)).join("") + "Aa1!"; }
 
 /* ---------- API ---------- */
+/* Two services with the same API. If the first can't be reached, the second is used. */
+const HOSTS = ["https://api.mail.tm", "https://api.mail.gw"];
+const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+function unreachable() {
+  if (inFrame) return "This preview window blocks internet access, so Pigeonhole can't fetch mail here. Download the file and open it in Chrome, Edge, Safari or Firefox, or use your Pigeonhole website link.";
+  if (!navigator.onLine) return "You're offline. Connect to the internet and refresh the page.";
+  return "Pigeonhole can't reach the mail service. An ad blocker, privacy extension, school or work network may be blocking it. Try turning the blocker off for this page, or try another network, then refresh.";
+}
+function hostOf(inbox) { return (inbox && inbox.host) || HOSTS[0]; }
 async function api(path, opt = {}, inbox) {
+  const base = opt.base || hostOf(inbox);
   const headers = { Accept: "application/json", ...(opt.headers || {}) };
   if (opt.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
   if (inbox && inbox.token) headers.Authorization = "Bearer " + inbox.token;
+  const init = { method: opt.method || "GET", headers };
+  if (opt.body) init.body = opt.body;
   let res;
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { res = await fetch(API + path, { ...opt, headers }); }
-    catch { throw new Error("Can't reach the mail service. Check your internet connection."); }
+    try { res = await fetch(base + path, init); }
+    catch { const e = new Error(unreachable()); e.network = true; throw e; }
     if (res.status === 429) { await new Promise(r => setTimeout(r, 800 * (attempt + 1))); continue; }
-    if (res.status === 401 && inbox && attempt === 0) { await login(inbox); headers.Authorization = "Bearer " + inbox.token; continue; }
+    if (res.status === 401 && inbox && path !== "/token" && attempt === 0) { await login(inbox); headers.Authorization = "Bearer " + inbox.token; continue; }
     break;
   }
   if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const msg = (data && (data["hydra:description"] || data.detail || data.message)) || ("Request failed (" + res.status + ")");
+    const msg = (data && (data["hydra:description"] || data.detail || data.message)) || ("The mail service returned an error (" + res.status + "). Try again in a minute.");
     const e = new Error(msg); e.status = res.status; throw e;
   }
   return data;
@@ -334,26 +346,33 @@ async function api(path, opt = {}, inbox) {
 /* The service may answer as a plain list or wrapped in "hydra:member" */
 function members(d) { if (Array.isArray(d)) return d; if (d && Array.isArray(d["hydra:member"])) return d["hydra:member"]; if (d && Array.isArray(d.member)) return d.member; return []; }
 async function login(inbox) {
-  const d = await api("/token", { method: "POST", body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
+  const d = await api("/token", { method: "POST", base: hostOf(inbox), body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
   inbox.token = d.token; inbox.id = d.id; save();
 }
 async function loadDomains() {
   if (S.domains.length) return S.domains;
-  const d = await api("/domains");
-  S.domains = members(d).filter(x => x && x.domain && x.isActive !== false && x.isPrivate !== true).map(x => x.domain);
+  let lastErr;
+  for (const host of HOSTS) {
+    try {
+      const d = await api("/domains", { base: host });
+      members(d).filter(x => x && x.domain && x.isActive !== false && x.isPrivate !== true)
+        .forEach(x => { if (!S.domains.some(y => y.domain === x.domain)) S.domains.push({ domain: x.domain, host }); });
+    } catch (e) { lastErr = e; }
+  }
   const sel = $("domainSel"); sel.innerHTML = "";
-  S.domains.forEach(dm => { const o = el("option", null, "@" + dm); o.value = dm; sel.appendChild(o); });
-  if (!S.domains.length) throw new Error("The mail service has no domains available right now. Try again in a few minutes.");
+  S.domains.forEach((dm, i) => { const o = el("option", null, "@" + dm.domain); o.value = String(i); sel.appendChild(o); });
+  sel.disabled = !S.domains.length;
+  if (!S.domains.length) throw lastErr || new Error("The mail service has no addresses available right now. Try again in a few minutes.");
   return S.domains;
 }
-async function createInbox(name, domain) {
+async function createInbox(name, idx) {
   const doms = await loadDomains();
-  domain = domain || doms[0];
+  const dm = doms[Number(idx) || 0] || doms[0];
   for (let i = 0; i < 4; i++) {
     const local = (name || randomName()).toLowerCase().replace(/[^a-z0-9._-]/g, "");
-    const inbox = { address: local + "@" + domain, password: randomPass(), created: Date.now() };
+    const inbox = { address: local + "@" + dm.domain, password: randomPass(), host: dm.host, created: Date.now() };
     try {
-      await api("/accounts", { method: "POST", body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
+      await api("/accounts", { method: "POST", base: dm.host, body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
       await login(inbox);
       S.inboxes.unshift(inbox); S.active = inbox.address; save();
       return inbox;
@@ -537,7 +556,7 @@ function drawMsg(m) {
       const b = el("button", "btn", "📎 " + a.filename + " (" + Math.ceil((a.size || 0) / 1024) + " KB)"); b.type = "button";
       b.onclick = async () => {
         try {
-          const res = await fetch(API + a.downloadUrl, { headers: { Authorization: "Bearer " + ib.token } });
+          const res = await fetch(hostOf(ib) + a.downloadUrl, { headers: { Authorization: "Bearer " + ib.token } });
           if (!res.ok) throw new Error();
           const url = URL.createObjectURL(await res.blob());
           const link = el("a"); link.href = url; link.download = a.filename; document.body.appendChild(link); link.click(); link.remove();
@@ -569,9 +588,10 @@ async function refresh(force) {
   if (busy || (!force && document.hidden)) return;
   const ib = activeInbox(); if (!ib) return;
   busy = true;
-  try { await fetchInbox(ib); lastOk = Date.now(); setLive(true, "Live · checks every 5 s"); showErr(null); renderHoles(); renderList(); }
+  try { await fetchInbox(ib); lastOk = Date.now(); setLive(true, "Live · checks every 5 s"); showErr(null); renderHoles(); renderList(); if (!S.sel) renderReaderEmpty(); }
   catch (e) {
     if (e.status === 401 || e.status === 404) { setLive(false, "This inbox has expired"); showErr("This inbox no longer exists on the mail service. Create a new address, or delete it from your list."); }
+    else if (e.network && !lastOk) { setLive(false, "Can't connect"); showErr(e.message); }
     else setLive(false, "Reconnecting…");
   }
   finally { busy = false; }
@@ -703,7 +723,10 @@ $("themeBtn").onclick = () => {
     await refresh(true);
     loadDomains().catch(() => {});
     refreshOthers();
-  } catch (e) { setLive(false, "Offline"); showErr(e.message); renderHeader(); }
+  } catch (e) {
+    setLive(false, "Can't connect"); showErr(e.message); renderHeader();
+    if (!activeInbox()) $("address").textContent = "not connected yet";
+  }
 })();
 })();
 </script>
