@@ -317,6 +317,7 @@ const inFrame = (() => { try { return window.self !== window.top; } catch { retu
 function unreachable() {
   if (inFrame) return "This preview window blocks internet access, so Pigeonhole can't fetch mail here. Download the file and open it in Chrome, Edge, Safari or Firefox, or use your Pigeonhole website link.";
   if (!navigator.onLine) return "You're offline. Connect to the internet and refresh the page.";
+  if (location.protocol === "file:" || location.origin === "null") return "Your browser won't let a downloaded file connect to the mail service. Open Pigeonhole from its website link instead (for example https://somersetnomad.github.io/Pigeonhole/).";
   return "Pigeonhole can't reach the mail service. An ad blocker, privacy extension, school or work network may be blocking it. Try turning the blocker off for this page, or try another network, then refresh.";
 }
 function hostOf(inbox) { return (inbox && inbox.host) || HOSTS[0]; }
