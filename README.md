@@ -1,32 +1,84 @@
 # Pigeonhole
 
-Disposable email inboxes that live in your browser. No sign-up, no login.
+Free throwaway email addresses that work straight from your web browser.
+No sign-up, no password, nothing to install.
 
-Pigeonhole is a single web page (`index.html`). Open it and you get a working email address straight away. Your inboxes are saved in the browser, so they're still there next time you open the page.
+Use it when a website asks for an email address and you don't want to give your real one. For example, to receive a sign-up code, a download link or a one-off confirmation.
 
-## Features
+---
 
-- **Instant address** on first visit, or choose your own name and domain
-- **Several inboxes side by side**, each with an unread count
-- **Verification codes detected automatically** with one-tap copy, plus quick buttons for "verify" and "confirm" links
-- **Live inbox** that checks for new mail every 5 seconds
-- **Desktop alerts and a sound** when mail arrives (optional)
-- **Tracking protection**: remote images are blocked until you choose to show them
-- **Safe viewing**: emails render in a sandboxed frame that can't run scripts
-- **Backup code** to move your inboxes to another browser or restore them after clearing data
-- Search, attachments, delete messages or whole inboxes, dark mode, phone layout
+## Step 1: Get Pigeonhole running
 
-## Using it
+Pick **one** of the two options below.
 
-- **Locally:** download `index.html` and double-click it.
-- **As a website:** turn on GitHub Pages for this repository (Settings → Pages → deploy from the `main` branch, root folder). The site will be at `https://somersetnomad.github.io/pigeonhole/`.
+### Option A: Put it online (recommended, do this once)
 
-## Limits
+This gives you a web link you can open on any computer or phone.
 
-- Receive-only. It can't send email.
-- Addresses use the domains provided by [Mail.tm](https://mail.tm), which delivers the mail. Their terms require a visible link back to Mail.tm (included in the page footer) and don't allow reselling the service.
-- Inboxes are stored only in your browser. Clearing site data removes them unless you've kept a backup code.
-- Messages are deleted by the provider after a while. Don't use this for anything important.
+1. At the top of this page on GitHub, click **Settings** (the cog icon).
+2. In the menu on the left, click **Pages**.
+3. Under **Build and deployment**, find **Source** and choose **Deploy from a branch**.
+4. Under **Branch**, choose **main**, leave the folder as **/ (root)**, and click **Save**.
+5. Wait about 2 minutes, then refresh the page. A box appears at the top saying **"Your site is live at…"** with a link.
+6. Click that link. That's Pigeonhole. **Bookmark it** so you can find it again.
+
+Your link will look like this: `https://somersetnomad.github.io/Pigeonhole/`
+
+### Option B: Use it on your own computer only
+
+1. On this GitHub page, click the file **index.html** in the list of files.
+2. Click the **download** button (the arrow pointing down, at the top right of the file).
+3. Find the downloaded file (usually in your **Downloads** folder) and **double-click** it.
+4. It opens in your web browser. Bookmark it, or keep the file somewhere easy to find.
+
+---
+
+## Step 2: Use your throwaway address
+
+1. **Open Pigeonhole.** An email address is created for you automatically and shown in the big box at the top.
+2. **Click "Copy"** to copy the address.
+3. **Paste it** into the website that's asking for your email, and submit.
+4. **Go back to Pigeonhole and wait.** New emails appear on the left within a few seconds. You don't need to refresh.
+5. **Click an email** to read it on the right.
+   - If the email contains a code, a yellow **Code** button appears. Click it to copy the code, then paste it where it's needed.
+   - If it contains a "verify" or "confirm" link, a blue button appears. Click it to open the link.
+
+That's it. Next time you open Pigeonhole in the same browser, your address and emails will still be there.
+
+---
+
+## The buttons explained
+
+| Button | What it does |
+|---|---|
+| **Copy** | Copies your current address so you can paste it anywhere. |
+| **New address** | Makes a fresh random address. Your old ones are kept in the row of tabs above your emails. |
+| **Choose name** | Lets you pick the first part of the address yourself, e.g. `jane.test@…` |
+| **Delete inbox** | Permanently deletes the current address and its emails. Click twice to confirm. |
+| **Alerts** | Turns on a sound and a pop-up notice when new email arrives. Your browser may ask for permission. |
+| **Backup** | Gives you a code to save your inboxes. Paste it into Pigeonhole on another browser and click **Restore** to get them back. |
+| **Show images** | Pictures in emails are hidden at first so senders can't tell you opened the email. Click to show them. |
+| **Moon icon** | Switches between light and dark colours. |
+
+---
+
+## Good to know
+
+- **It only receives email.** You can't send or reply from it.
+- **Use the same browser.** Your addresses are saved in the browser you used. A different browser, a private/incognito window, or clearing your browsing data won't show them. Use **Backup** if you want to keep them.
+- **Emails don't last forever.** The mail service clears old messages after a while.
+- **Don't use it for anything important or private**, such as banking, your main accounts, or anything you'd need to recover later. Anyone who knows the address could potentially receive its mail.
+- Email delivery is provided by [Mail.tm](https://mail.tm), which is why its link appears at the bottom of the page.
+
+---
+
+## Something not working?
+
+- **No address appears:** check you're connected to the internet, then refresh the page.
+- **"This inbox has expired":** the mail service removed it. Click **New address**.
+- **An email hasn't arrived after a few minutes:** some websites block throwaway addresses. Try **New address** and use a different one, or try a different domain using **Choose name**.
+
+---
 
 ## Licence
 
