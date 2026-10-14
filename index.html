@@ -123,6 +123,22 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .drawer p{margin:0;color:var(--muted);font-size:14px;max-width:68ch}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 
+.guide{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.guide-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.guide h2{font:600 18px/1.2 var(--f-display);margin:0}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.steps li{counter-increment:s;background:var(--panel);border-radius:10px;padding:12px 14px 12px 52px;position:relative;display:flex;flex-direction:column;gap:2px;min-width:0}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:800 15px/28px var(--f-display);text-align:center}
+.steps span{color:var(--muted);font-size:14px}
+.steps em{font-style:normal;font-weight:700;color:var(--ink)}
+.help h4{font:600 15px/1.2 var(--f-display);margin:8px 0 0}
+.defs{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0;font-size:14px}
+.defs dt{font-weight:700}
+.defs dd{margin:0;color:var(--muted);max-width:68ch}
+.defs code{font-family:var(--f-mono);font-size:13px}
+.tips{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);max-width:75ch}
+.tips b{color:var(--ink)}
+@media (max-width:820px){.steps{grid-template-columns:1fr}.defs{grid-template-columns:1fr;gap:2px}.defs dd{margin-bottom:8px}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 .toast.show{opacity:1}
 .err{background:color-mix(in srgb,var(--bad) 14%,var(--panel));border:1px solid var(--bad);color:var(--ink);border-radius:10px;padding:10px 14px;font-size:14px}
@@ -148,9 +164,11 @@ footer a{color:var(--accent)}
       <div><h1>Pigeonhole</h1><small>Disposable inboxes, kept in this browser</small></div>
     </div>
     <div class="hdr-actions">
+      <button class="btn" id="helpBtn" type="button" aria-expanded="false" aria-controls="help">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.5" r=".6" fill="currentColor"/></svg>How to use</button>
       <button class="btn" id="alertsBtn" type="button" title="Get a desktop alert and sound when mail arrives">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Alerts off</span></button>
-      <button class="btn" id="backupBtn" type="button">
+      <button class="btn" id="backupBtn" type="button" title="Save your addresses so you can restore them in another browser">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>Backup</button>
       <button class="btn" id="themeBtn" type="button" aria-label="Switch theme">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
@@ -166,16 +184,67 @@ footer a{color:var(--accent)}
       <p class="address" id="address">creating…</p>
     </div>
     <div class="env-actions">
-      <button class="btn primary" id="copyBtn" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
-      <button class="btn" id="newBtn" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New address</button>
-      <button class="btn" id="customBtn" type="button">Choose name</button>
-      <button class="btn danger" id="delInboxBtn" type="button">Delete inbox</button>
+      <button class="btn primary" id="copyBtn" type="button" title="Copy this address to paste into a website"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+      <button class="btn" id="newBtn" type="button" title="Make another random address (your old ones are kept)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New address</button>
+      <button class="btn" id="customBtn" type="button" title="Pick the first part of the address yourself">Choose name</button>
+      <button class="btn danger" id="delInboxBtn" type="button" title="Permanently delete this address and its emails">Delete inbox</button>
     </div>
     <form class="creator" id="creator">
       <input id="customName" placeholder="your-name" autocomplete="off" spellcheck="false" maxlength="40" aria-label="Name before the @">
       <select id="domainSel" aria-label="Domain"></select>
       <button class="btn primary" type="submit">Create</button>
     </form>
+  </section>
+
+  <section class="guide" id="guide" aria-label="How Pigeonhole works">
+    <div class="guide-head">
+      <h2>Get an email in 3 steps</h2>
+      <div class="row">
+        <button class="btn" id="guideMore" type="button">More help</button>
+        <button class="btn primary" id="guideClose" type="button">Got it</button>
+      </div>
+    </div>
+    <ol class="steps">
+      <li><b>Copy your address</b><span>Click the blue <em>Copy</em> button in the box above.</span></li>
+      <li><b>Paste it where it's needed</b><span>Use it on any website that asks for your email, then submit the form.</span></li>
+      <li><b>Come back here</b><span>The email appears below within seconds. If it has a code, click the yellow <em>Code</em> button to copy it.</span></li>
+    </ol>
+  </section>
+
+  <section class="drawer help" id="help" hidden aria-labelledby="helpTitle">
+    <div class="guide-head">
+      <h3 id="helpTitle">How to use Pigeonhole</h3>
+      <button class="btn" id="closeHelp" type="button">Close</button>
+    </div>
+    <p>Pigeonhole gives you free throwaway email addresses. Use one whenever a website wants your email and you'd rather not give your real one, for example to receive a sign-up code or a download link. There's no account or password. Everything is saved in this browser.</p>
+
+    <h4>What each button does</h4>
+    <dl class="defs">
+      <dt>Copy</dt><dd>Copies your current address so you can paste it anywhere.</dd>
+      <dt>New address</dt><dd>Makes a fresh random address. Your old ones stay in the row of tabs above your emails, so you can switch back.</dd>
+      <dt>Choose name</dt><dd>Pick the first part of the address yourself, such as <code>jane.test</code>, and choose an ending from the list.</dd>
+      <dt>Delete inbox</dt><dd>Permanently removes the current address and all its emails. Click it twice to confirm.</dd>
+      <dt>Code (yellow)</dt><dd>Appears when an email contains a sign-in or verification code. Click to copy the code.</dd>
+      <dt>Link (blue)</dt><dd>Appears when an email has a "verify" or "confirm" link. Click to open it.</dd>
+      <dt>Show images</dt><dd>Pictures in emails are hidden at first so senders can't tell you opened their email. Click to show them.</dd>
+      <dt>Alerts</dt><dd>Plays a sound and shows a pop-up when new email arrives. Your browser may ask for permission.</dd>
+      <dt>Backup</dt><dd>Gives you a code that saves all your addresses. Paste it into Pigeonhole on another browser and click Restore to get them back.</dd>
+    </dl>
+
+    <h4>Good to know</h4>
+    <ul class="tips">
+      <li><b>Receive only.</b> You can't send or reply from Pigeonhole.</li>
+      <li><b>Same browser, same inboxes.</b> A different browser, a private window, or clearing your browsing data won't show your addresses. Use Backup to keep them.</li>
+      <li><b>Emails don't last forever.</b> Old messages are cleared after a while.</li>
+      <li><b>Not for important accounts.</b> Don't use it for banking, your main accounts, or anything you might need to recover later.</li>
+    </ul>
+
+    <h4>Something not working?</h4>
+    <ul class="tips">
+      <li><b>No address shows up:</b> check your internet connection and refresh the page.</li>
+      <li><b>"This inbox has expired":</b> the address was removed. Click New address.</li>
+      <li><b>Email hasn't arrived after a few minutes:</b> some websites block throwaway addresses. Try a new address, or pick a different ending with Choose name.</li>
+    </ul>
   </section>
 
   <div class="desk" id="desk">
@@ -593,6 +662,16 @@ $("restoreBtn").onclick = async () => {
   toast(added ? "Restored " + added + " inbox" + (added > 1 ? "es" : "") : "Nothing new to restore");
 };
 
+/* help */
+function setHelp(open) {
+  $("help").hidden = !open; $("helpBtn").setAttribute("aria-expanded", String(open));
+  if (open) $("help").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("helpBtn").onclick = () => setHelp($("help").hidden);
+$("closeHelp").onclick = () => setHelp(false);
+$("guideMore").onclick = () => setHelp(true);
+$("guideClose").onclick = () => { $("guide").hidden = true; store.set("guideSeen", true); };
+
 /* theme */
 function applyTheme(t) { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); }
 $("themeBtn").onclick = () => {
@@ -605,6 +684,7 @@ $("themeBtn").onclick = () => {
   applyTheme(store.get("theme", null));
   S.inboxes = store.get("inboxes", []); S.active = store.get("active", null);
   S.alerts = store.get("alerts", false); paintAlerts();
+  $("guide").hidden = store.get("guideSeen", false);
   if (S.inboxes.length && !activeInbox()) S.active = S.inboxes[0].address;
   renderAll();
   try {
