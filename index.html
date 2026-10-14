@@ -225,28 +225,29 @@ footer a{color:var(--accent)}
     <dl class="defs">
       <dt>Copy</dt><dd>Copies your current address so you can paste it anywhere.</dd>
       <dt>New address</dt><dd>Makes a fresh random address. Your old ones stay in the row of tabs above your emails, so you can switch back.</dd>
-      <dt>Choose name</dt><dd>Pick the first part of the address yourself, such as <code>jane.test</code>, and choose an ending from the list.</dd>
-      <dt>Delete inbox</dt><dd>Permanently removes the current address and all its emails. Click it twice to confirm.</dd>
+      <dt>Choose name</dt><dd>Pick the first part of the address yourself, such as <code>jane.test</code>, and choose an ending from the list. All endings deliver to the same inbox, so if a website rejects one, try another.</dd>
+      <dt>Delete inbox</dt><dd>Removes the current address from your list. Click it twice to confirm.</dd>
       <dt>Code (yellow)</dt><dd>Appears when an email contains a sign-in or verification code. Click to copy the code.</dd>
       <dt>Link (blue)</dt><dd>Appears when an email has a "verify" or "confirm" link. Click to open it.</dd>
       <dt>Show images</dt><dd>Pictures in emails are hidden at first so senders can't tell you opened their email. Click to show them.</dd>
       <dt>Alerts</dt><dd>Plays a sound and shows a pop-up when new email arrives. Your browser may ask for permission.</dd>
-      <dt>Backup</dt><dd>Gives you a code that saves all your addresses. Paste it into Pigeonhole on another browser and click Restore to get them back.</dd>
+      <dt>Backup</dt><dd>Gives you a code that lists all your addresses. Paste it into Pigeonhole on another browser and click Restore to get them back.</dd>
     </dl>
 
     <h4>Good to know</h4>
     <ul class="tips">
       <li><b>Receive only.</b> You can't send or reply from Pigeonhole.</li>
       <li><b>Same browser, same inboxes.</b> A different browser, a private window, or clearing your browsing data won't show your addresses. Use Backup to keep them.</li>
-      <li><b>Emails don't last forever.</b> Old messages are cleared after a while.</li>
+      <li><b>Emails last 1 hour.</b> Messages are deleted an hour after they arrive, so copy any code or link you need straight away. Your address itself keeps working.</li>
+      <li><b>Inboxes are public.</b> Anyone who types the same address can read its emails. Random names are hard to guess; names you choose yourself are easier to guess.</li>
       <li><b>Not for important accounts.</b> Don't use it for banking, your main accounts, or anything you might need to recover later.</li>
     </ul>
 
     <h4>Something not working?</h4>
     <ul class="tips">
       <li><b>No address shows up:</b> check your internet connection and refresh the page.</li>
-      <li><b>"This inbox has expired":</b> the address was removed. Click New address.</li>
-      <li><b>Email hasn't arrived after a few minutes:</b> some websites block throwaway addresses. Try a new address, or pick a different ending with Choose name.</li>
+      <li><b>An email disappeared:</b> emails are deleted 1 hour after they arrive. Ask the website to send it again.</li>
+      <li><b>Email hasn't arrived after a few minutes:</b> some websites block throwaway addresses. Use Choose name to keep the same name with a different ending, or make a new address.</li>
     </ul>
   </section>
 
@@ -271,8 +272,8 @@ footer a{color:var(--accent)}
   </section>
 
   <footer>
-    <span>Receive-only. Messages are deleted by the provider after a while, so don't use this for anything important.</span>
-    <span>Mail delivered by <a href="https://mail.tm" target="_blank" rel="noopener">Mail.tm</a> and <a href="https://mail.gw" target="_blank" rel="noopener">Mail.gw</a></span>
+    <span>Receive-only. Emails are deleted after 1 hour, and inboxes are public: anyone who knows an address can read it.</span>
+    <span>Mail delivered by <a href="https://www.guerrillamail.com" target="_blank" rel="noopener">Guerrilla Mail</a></span>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -307,83 +308,96 @@ function rel(ts) {
 function rnd(n) { const a = new Uint32Array(n); crypto.getRandomValues(a); return a; }
 const ADJ = ["amber","brisk","calm","dusty","eager","fuzzy","gentle","hazel","ivory","jolly","keen","lunar","mellow","nimble","olive","plucky","quiet","rapid","sunny","tidy","umber","vivid","witty","young","zesty"];
 const NOUN = ["otter","finch","maple","comet","pebble","harbor","lantern","meadow","walrus","cactus","falcon","bramble","quill","tulip","badger","pigeon","glacier","marlin","ember","orchid"];
-function randomName() { const r = rnd(3); return ADJ[r[0] % ADJ.length] + "." + NOUN[r[1] % NOUN.length] + (r[2] % 900 + 100); }
+function randomName() { const r = rnd(2); return ADJ[r[0] % ADJ.length] + NOUN[r[1] % NOUN.length]; }
 function randomPass() { return Array.from(rnd(4), x => x.toString(36)).join("") + "Aa1!"; }
 
-/* ---------- API ---------- */
-/* Two services with the same API. If the first can't be reached, the second is used. */
-const HOSTS = ["https://api.mail.tm", "https://api.mail.gw"];
+/* ---------- API (Guerrilla Mail) ---------- */
+const GM = "https://api.guerrillamail.com/ajax.php";
+/* Mail sent to the same name at any of these endings arrives in the same inbox */
+const DOMAINS = ["sharklasers.com","grr.la","guerrillamail.com","guerrillamail.net","guerrillamail.org","guerrillamail.biz","guerrillamail.de","guerrillamail.info","guerrillamailblock.com","pokemail.net","spam4.me"];
+const SESSION_MS = 15 * 60 * 1000;
 const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
 function unreachable() {
-  if (inFrame) return "This preview window blocks internet access, so Pigeonhole can't fetch mail here. Download the file and open it in Chrome, Edge, Safari or Firefox, or use your Pigeonhole website link.";
+  if (inFrame) return "This preview window blocks internet access, so Pigeonhole can't fetch mail here. Open your Pigeonhole website link in Chrome, Edge, Safari or Firefox instead.";
   if (!navigator.onLine) return "You're offline. Connect to the internet and refresh the page.";
-  if (location.protocol === "file:" || location.origin === "null") return "Your browser won't let a downloaded file connect to the mail service. Open Pigeonhole from its website link instead (for example https://somersetnomad.github.io/Pigeonhole/).";
   return "Pigeonhole can't reach the mail service. An ad blocker, privacy extension, school or work network may be blocking it. Try turning the blocker off for this page, or try another network, then refresh.";
 }
-function hostOf(inbox) { return (inbox && inbox.host) || HOSTS[0]; }
-async function api(path, opt = {}, inbox) {
-  const base = opt.base || hostOf(inbox);
-  const headers = { Accept: "application/json", ...(opt.headers || {}) };
-  if (opt.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-  if (inbox && inbox.token) headers.Authorization = "Bearer " + inbox.token;
-  const init = { method: opt.method || "GET", headers };
-  if (opt.body) init.body = opt.body;
+async function gm(f, params = {}, inbox) {
+  const q = new URLSearchParams({ f, lang: "en", agent: "Pigeonhole", ip: "127.0.0.1" });
+  if (inbox && inbox.sid) q.set("sid_token", inbox.sid);
+  for (const [k, v] of Object.entries(params)) q.set(k, v);
   let res;
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { res = await fetch(base + path, init); }
+    try { res = await fetch(GM + "?" + q.toString(), { cache: "no-store" }); }
     catch { const e = new Error(unreachable()); e.network = true; throw e; }
-    if (res.status === 429) { await new Promise(r => setTimeout(r, 800 * (attempt + 1))); continue; }
-    if (res.status === 401 && inbox && path !== "/token" && attempt === 0) { await login(inbox); headers.Authorization = "Bearer " + inbox.token; continue; }
+    if (res.status === 429 || res.status >= 500) { await new Promise(r => setTimeout(r, 900 * (attempt + 1))); continue; }
     break;
   }
-  if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    const msg = (data && (data["hydra:description"] || data.detail || data.message)) || ("The mail service returned an error (" + res.status + "). Try again in a minute.");
-    const e = new Error(msg); e.status = res.status; throw e;
-  }
+  if (!res.ok || !data) { const e = new Error("The mail service didn't answer properly (" + res.status + "). Try again in a minute."); e.status = res.status; throw e; }
+  if (inbox) { if (data.sid_token) inbox.sid = data.sid_token; inbox.used = Date.now(); }
   return data;
 }
-/* The service may answer as a plain list or wrapped in "hydra:member" */
-function members(d) { if (Array.isArray(d)) return d; if (d && Array.isArray(d["hydra:member"])) return d["hydra:member"]; if (d && Array.isArray(d.member)) return d.member; return []; }
-async function login(inbox) {
-  const d = await api("/token", { method: "POST", base: hostOf(inbox), body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
-  inbox.token = d.token; inbox.id = d.id; save();
+function userOf(addr) { return String(addr || "").split("@")[0].toLowerCase(); }
+async function claim(inbox) {
+  const d = await gm("set_email_user", { email_user: inbox.user }, inbox);
+  const got = userOf(d.email_addr);
+  if (!got) throw new Error("Couldn't open the address " + inbox.address + ". Try a different name.");
+  if (got !== inbox.user) {
+    /* the service adjusted the name: adopt its version */
+    const old = inbox.address;
+    inbox.user = got; inbox.address = got + "@" + inbox.domain;
+    if (S.active === old) S.active = inbox.address;
+    if (S.msgs[old]) { S.msgs[inbox.address] = S.msgs[old]; delete S.msgs[old]; }
+  }
+  save();
+}
+async function ensureSession(inbox) {
+  if (inbox.sid && inbox.used && Date.now() - inbox.used < SESSION_MS) return;
+  inbox.sid = null;
+  await gm("get_email_address", {}, inbox);
+  await claim(inbox);
 }
 async function loadDomains() {
-  if (S.domains.length) return S.domains;
-  let lastErr;
-  for (const host of HOSTS) {
-    try {
-      const d = await api("/domains", { base: host });
-      members(d).filter(x => x && x.domain && x.isActive !== false && x.isPrivate !== true)
-        .forEach(x => { if (!S.domains.some(y => y.domain === x.domain)) S.domains.push({ domain: x.domain, host }); });
-    } catch (e) { lastErr = e; }
-  }
   const sel = $("domainSel"); sel.innerHTML = "";
-  S.domains.forEach((dm, i) => { const o = el("option", null, "@" + dm.domain); o.value = String(i); sel.appendChild(o); });
-  sel.disabled = !S.domains.length;
-  if (!S.domains.length) throw lastErr || new Error("The mail service has no addresses available right now. Try again in a few minutes.");
-  return S.domains;
+  DOMAINS.forEach((d, i) => { const o = el("option", null, "@" + d); o.value = String(i); sel.appendChild(o); });
+  sel.disabled = false;
+  return DOMAINS;
 }
+function makeInbox(user, domain) { return { address: user + "@" + domain, user, domain, created: Date.now() }; }
 async function createInbox(name, idx) {
-  const doms = await loadDomains();
-  const dm = doms[Number(idx) || 0] || doms[0];
-  for (let i = 0; i < 4; i++) {
-    const local = (name || randomName()).toLowerCase().replace(/[^a-z0-9._-]/g, "");
-    const inbox = { address: local + "@" + dm.domain, password: randomPass(), host: dm.host, created: Date.now() };
-    try {
-      await api("/accounts", { method: "POST", base: dm.host, body: JSON.stringify({ address: inbox.address, password: inbox.password }) });
-      await login(inbox);
-      S.inboxes.unshift(inbox); S.active = inbox.address; save();
-      return inbox;
-    } catch (e) {
-      if (e.status === 422 && name) throw new Error("That name is taken or not allowed. Try another.");
-      if (e.status !== 422) throw e;
-    }
-  }
-  throw new Error("Couldn't create an address. Try again.");
+  const domain = DOMAINS[Number(idx) || 0] || DOMAINS[0];
+  const user = (name || (randomName() + String(rnd(1)[0] % 9000 + 1000))).toLowerCase().replace(/[^a-z0-9._-]/g, "");
+  const existing = S.inboxes.find(i => i.address === user + "@" + domain);
+  if (existing) { S.active = existing.address; save(); return existing; }
+  const inbox = makeInbox(user, domain);
+  await ensureSession(inbox);
+  const dup = S.inboxes.find(i => i.address === inbox.address);
+  if (dup) { S.active = dup.address; save(); return dup; }
+  S.inboxes.unshift(inbox); S.active = inbox.address; save();
+  return inbox;
 }
+function normalise(m, inbox) {
+  const ts = Number(m.mail_timestamp) * 1000;
+  return { id: String(m.mail_id), from: { address: m.mail_from || "" }, subject: m.mail_subject || "", intro: m.mail_excerpt || "",
+    seen: String(m.mail_read) === "1", createdAt: ts > 0 ? ts : inbox.created, att: Number(m.att) || 0 };
+}
+async function listMessages(inbox) {
+  await ensureSession(inbox);
+  let d = await gm("get_email_list", { offset: 0 }, inbox);
+  if (d.email && userOf(d.email) !== inbox.user) { await claim(inbox); d = await gm("get_email_list", { offset: 0 }, inbox); }
+  return (d.list || []).filter(m => !(String(m.mail_id) === "1" && /guerrillamail\.com$/i.test(m.mail_from || ""))).map(m => normalise(m, inbox));
+}
+function htmlToText(html) { try { return new DOMParser().parseFromString(String(html).replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n\n"), "text/html").body.textContent.trim(); } catch { return ""; } }
+async function getMessage(inbox, id) {
+  await ensureSession(inbox);
+  const d = await gm("fetch_email", { email_id: id }, inbox);
+  if (!d || !d.mail_id) throw new Error("This message is no longer available. Emails are deleted after 1 hour.");
+  const m = normalise(d, inbox);
+  const body = d.mail_body || "";
+  return { ...m, html: body, text: htmlToText(body) };
+}
+async function deleteMessage(inbox, id) { await ensureSession(inbox); await gm("del_email", { "email_ids[]": id }, inbox); }
 
 /* ---------- code & link detection ---------- */
 const KEY = /(code|otp|pin|passcode|password|verification|verify|confirm|security|one[- ]?time|token|login|sign[- ]?in|2fa|kod|código|code de)/i;
@@ -491,15 +505,15 @@ async function openMsg(id) {
   const r = $("reader"); r.innerHTML = ""; r.appendChild(emptyState("Opening…", ""));
   $("desk").classList.add("reading");
   let m;
-  try { m = await api("/messages/" + id, {}, ib); } catch (e) { r.innerHTML = ""; r.appendChild(emptyState("Couldn't open this message", e.message)); return; }
+  try { m = await getMessage(ib, id); } catch (e) { r.innerHTML = ""; r.appendChild(emptyState("Couldn't open this message", e.message)); return; }
   const lm = (S.msgs[ib.address] || []).find(x => x.id === id);
-  if (lm && !lm.seen) { lm.seen = true; renderHoles(); renderList(); api("/messages/" + id, { method: "PATCH", body: JSON.stringify({ seen: true }), headers: { "Content-Type": "application/merge-patch+json" } }, ib).catch(() => {}); }
+  if (lm && !lm.seen) { lm.seen = true; renderHoles(); renderList(); }
   drawMsg(m);
 }
 function drawMsg(m) {
   const ib = activeInbox();
   const r = $("reader"); r.innerHTML = "";
-  const html = Array.isArray(m.html) ? m.html.join("") : (m.html || "");
+  const html = m.html || "";
   const text = m.text || "";
   const head = el("div", "r-head");
   const back = el("button", "btn back", "← Inbox"); back.type = "button"; back.onclick = () => { S.sel = null; renderList(); renderReaderEmpty(); };
@@ -531,7 +545,7 @@ function drawMsg(m) {
   const del = el("button", "btn danger", "Delete"); del.type = "button";
   del.onclick = async () => {
     if (!del.classList.contains("armed")) { del.classList.add("armed"); del.textContent = "Confirm delete"; setTimeout(() => { del.classList.remove("armed"); del.textContent = "Delete"; }, 3000); return; }
-    try { await api("/messages/" + m.id, { method: "DELETE" }, ib); S.msgs[ib.address] = (S.msgs[ib.address] || []).filter(x => x.id !== m.id); S.sel = null; renderAll(); toast("Message deleted"); }
+    try { await deleteMessage(ib, m.id); S.msgs[ib.address] = (S.msgs[ib.address] || []).filter(x => x.id !== m.id); S.sel = null; renderAll(); toast("Message deleted"); }
     catch (e) { toast(e.message); }
   };
   tools.appendChild(del);
@@ -551,21 +565,9 @@ function drawMsg(m) {
   }
   r.appendChild(body);
 
-  if (m.attachments && m.attachments.length) {
+  if (m.att) {
     const at = el("div", "atts");
-    m.attachments.forEach(a => {
-      const b = el("button", "btn", "📎 " + a.filename + " (" + Math.ceil((a.size || 0) / 1024) + " KB)"); b.type = "button";
-      b.onclick = async () => {
-        try {
-          const res = await fetch(hostOf(ib) + a.downloadUrl, { headers: { Authorization: "Bearer " + ib.token } });
-          if (!res.ok) throw new Error();
-          const url = URL.createObjectURL(await res.blob());
-          const link = el("a"); link.href = url; link.download = a.filename; document.body.appendChild(link); link.click(); link.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-        } catch { toast("Couldn't download the attachment"); }
-      };
-      at.appendChild(b);
-    });
+    at.appendChild(el("span", "meta", "This email has " + m.att + " attachment" + (m.att > 1 ? "s" : "") + ". Pigeonhole can't download attachments."));
     r.appendChild(at);
   }
 }
@@ -575,8 +577,7 @@ function renderAll() { renderHeader(); renderHoles(); renderList(); if (!S.sel) 
 let busy = false, lastOk = 0;
 function setLive(ok, txt) { $("liveDot").classList.toggle("off", !ok); $("liveTxt").textContent = txt; }
 async function fetchInbox(ib) {
-  const d = await api("/messages?page=1", {}, ib);
-  const msgs = members(d);
+  const msgs = await listMessages(ib);
   const known = S.known[ib.address];
   if (known) {
     const fresh = msgs.filter(m => !known.has(m.id));
@@ -591,8 +592,7 @@ async function refresh(force) {
   busy = true;
   try { await fetchInbox(ib); lastOk = Date.now(); setLive(true, "Live · checks every 5 s"); showErr(null); renderHoles(); renderList(); if (!S.sel) renderReaderEmpty(); }
   catch (e) {
-    if (e.status === 401 || e.status === 404) { setLive(false, "This inbox has expired"); showErr("This inbox no longer exists on the mail service. Create a new address, or delete it from your list."); }
-    else if (e.network && !lastOk) { setLive(false, "Can't connect"); showErr(e.message); }
+    if (e.network && !lastOk) { setLive(false, "Can't connect"); showErr(e.message); }
     else setLive(false, "Reconnecting…");
   }
   finally { busy = false; }
@@ -657,7 +657,7 @@ $("customBtn").onclick = async () => {
 $("creator").onsubmit = async e => {
   e.preventDefault();
   const name = $("customName").value.trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(name)) { toast("Use 3–40 letters, numbers, dots or dashes"); return; }
+  if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(name)) { toast("Use 3 to 40 letters, numbers, dots or dashes"); return; }
   try { await createInbox(name, $("domainSel").value); $("creator").classList.remove("open"); $("customName").value = ""; S.sel = null; renderAll(); await refresh(true); toast("Address created"); }
   catch (err) { showErr(err.message); }
 };
@@ -665,7 +665,7 @@ $("delInboxBtn").onclick = async () => {
   const b = $("delInboxBtn"); const ib = activeInbox(); if (!ib) return;
   if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirm: delete forever"; setTimeout(() => { b.classList.remove("armed"); b.textContent = "Delete inbox"; }, 3500); return; }
   b.classList.remove("armed"); b.textContent = "Delete inbox";
-  try { if (ib.id) await api("/accounts/" + ib.id, { method: "DELETE" }, ib); } catch {}
+  try { await ensureSession(ib); await gm("forget_me", { email_addr: ib.user + "@guerrillamailblock.com" }, ib); } catch {}
   S.inboxes = S.inboxes.filter(x => x !== ib); delete S.msgs[ib.address];
   S.active = S.inboxes[0]?.address || null; S.sel = null; save(); showErr(null);
   if (!S.active) { await $("newBtn").onclick(); } else { renderAll(); refresh(true); }
@@ -675,7 +675,7 @@ $("q").oninput = renderList;
 
 $("backupBtn").onclick = () => {
   const d = $("backup"); d.hidden = !d.hidden;
-  if (!d.hidden) { $("backupTxt").value = btoa(unescape(encodeURIComponent(JSON.stringify(S.inboxes.map(i => ({ a: i.address, p: i.password })))))); d.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  if (!d.hidden) { $("backupTxt").value = btoa(unescape(encodeURIComponent(JSON.stringify(S.inboxes.map(i => ({ a: i.address })))))); d.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
 };
 $("closeBackup").onclick = () => { $("backup").hidden = true; };
 $("copyBackup").onclick = () => copy($("backupTxt").value, "Backup code copied");
@@ -685,9 +685,10 @@ $("restoreBtn").onclick = async () => {
   catch { toast("That doesn't look like a backup code"); return; }
   let added = 0;
   for (const it of items) {
-    if (!it.a || !it.p || S.inboxes.some(x => x.address === it.a)) continue;
-    const ib = { address: it.a, password: it.p, created: Date.now() };
-    try { await login(ib); S.inboxes.push(ib); added++; } catch {}
+    if (!it.a || S.inboxes.some(x => x.address === it.a)) continue;
+    const [user, domain] = String(it.a).toLowerCase().split("@");
+    if (!user || !DOMAINS.includes(domain)) continue;
+    S.inboxes.push(makeInbox(user, domain)); added++;
   }
   if (added) { S.active = S.active || S.inboxes[0].address; save(); renderAll(); refreshOthers(); }
   toast(added ? "Restored " + added + " inbox" + (added > 1 ? "es" : "") : "Nothing new to restore");
@@ -713,7 +714,10 @@ $("themeBtn").onclick = () => {
 /* ---------- boot ---------- */
 (async function boot() {
   applyTheme(store.get("theme", null));
-  S.inboxes = store.get("inboxes", []); S.active = store.get("active", null);
+  /* keep only Guerrilla inboxes (older versions used a different service) */
+  S.inboxes = store.get("inboxes", []).filter(i => i && i.user && DOMAINS.includes(i.domain)).map(i => ({ ...i, sid: null, used: 0 }));
+  S.active = store.get("active", null);
+  loadDomains();
   S.alerts = store.get("alerts", false); paintAlerts();
   $("guide").hidden = store.get("guideSeen", false);
   if (S.inboxes.length && !activeInbox()) S.active = S.inboxes[0].address;
@@ -722,7 +726,6 @@ $("themeBtn").onclick = () => {
     if (!S.inboxes.length) await createInbox();
     renderAll();
     await refresh(true);
-    loadDomains().catch(() => {});
     refreshOthers();
   } catch (e) {
     setLive(false, "Can't connect"); showErr(e.message); renderHeader();

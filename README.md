@@ -31,6 +31,8 @@ Your link will look like this: `https://somersetnomad.github.io/Pigeonhole/`
 3. Find the downloaded file (usually in your **Downloads** folder) and **double-click** it.
 4. It opens in your web browser. Bookmark it, or keep the file somewhere easy to find.
 
+If the downloaded copy says it can't connect, use Option A instead. Some browsers and phone file viewers block downloaded pages from going online.
+
 ---
 
 ## Step 2: Use your throwaway address
@@ -54,7 +56,7 @@ That's it. Next time you open Pigeonhole in the same browser, your address and e
 | **Copy** | Copies your current address so you can paste it anywhere. |
 | **New address** | Makes a fresh random address. Your old ones are kept in the row of tabs above your emails. |
 | **Choose name** | Lets you pick the first part of the address yourself, e.g. `jane.test@…` |
-| **Delete inbox** | Permanently deletes the current address and its emails. Click twice to confirm. |
+| **Delete inbox** | Removes the current address from your list. Click twice to confirm. |
 | **Alerts** | Turns on a sound and a pop-up notice when new email arrives. Your browser may ask for permission. |
 | **Backup** | Gives you a code to save your inboxes. Paste it into Pigeonhole on another browser and click **Restore** to get them back. |
 | **Show images** | Pictures in emails are hidden at first so senders can't tell you opened the email. Click to show them. |
@@ -66,16 +68,17 @@ That's it. Next time you open Pigeonhole in the same browser, your address and e
 
 - **It only receives email.** You can't send or reply from it.
 - **Use the same browser.** Your addresses are saved in the browser you used. A different browser, a private/incognito window, or clearing your browsing data won't show them. Use **Backup** if you want to keep them.
-- **Emails don't last forever.** The mail service clears old messages after a while.
+- **Emails last 1 hour.** Copy any code or link straight away. The address itself keeps working.
+- **Inboxes are public.** Anyone who types the same address can read its emails. Random names are hard to guess; names you pick yourself are easier to guess.
 - **Don't use it for anything important or private**, such as banking, your main accounts, or anything you'd need to recover later. Anyone who knows the address could potentially receive its mail.
-- Email delivery is provided by [Mail.tm](https://mail.tm), which is why its link appears at the bottom of the page.
+- Email delivery is provided by [Guerrilla Mail](https://www.guerrillamail.com), which is why its link appears at the bottom of the page.
 
 ---
 
 ## Something not working?
 
 - **No address appears:** check you're connected to the internet, then refresh the page.
-- **"This inbox has expired":** the mail service removed it. Click **New address**.
+- **An email disappeared:** emails are deleted 1 hour after they arrive. Ask the website to send it again.
 - **An email hasn't arrived after a few minutes:** some websites block throwaway addresses. Try **New address** and use a different one, or try a different domain using **Choose name**.
 
 ---
